@@ -20,5 +20,8 @@ newgrp docker
 
 docker run hello-world              to make sure docker is running properly
 
+docker run -d -p 8081:8081 sonatype/nexus3
+docker ps                               to check
 
 
+check on the official website if this image doesnt work.
