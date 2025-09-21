@@ -1,0 +1,24 @@
+#prerequisite is to download docker on your server so run the following commands below.
+
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+#Check docker is running with this command
+sudo systemctl status docker
+#After installing docker on your server  you need to make sure that the user who will be running the docker commands be added on the docker group so run the following command.
+sudo usermod -aG docker &USER       and the user will be added into the docker group and to make the change effecting without having to restart your server run the following command.
+newgrp docker
+
+docker run hello-world              to make sure docker is running properly
+
+docker run -d -p 9000:9000 sonarqube:lts-community             and sonarqube will be install as a container on your server
+docker ps                                                      to check if the container is running
