@@ -7,6 +7,18 @@
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.3.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
+    <properties>
+        <java.version>17</java.version>
+
+        <!-- SonarQube Settings -->
+        <sonar.host.url>http://YOUR-SONAR-IP:9000</sonar.host.url>
+        <sonar.login>YOUR_TOKEN_HERE</sonar.login>
+
+        <!-- Optional Sonar Metadata -->
+        <sonar.projectKey>bankapp</sonar.projectKey>
+        <sonar.projectName>Bank Application</sonar.projectName>
+        <sonar.projectVersion>1.0</sonar.projectVersion>
+    </properties>
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>bankapp</artifactId>
