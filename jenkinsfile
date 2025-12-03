@@ -1,0 +1,119 @@
+pipeline {
+    agent any
+    parameters{
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker tag')
+    }
+
+    tools {
+        maven 'maven3'
+    }
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+    stages {
+        stage('git clone') {
+            steps {
+                echo 'repository cloning in effect'
+                git branch: 'main', credentialsId: 'git-cred', url: 'https://github.com/Zbantar/Multi-Tier-BankApp-CI.git'
+            }
+        }
+       stage('compile') {
+            steps {
+                echo 'compiling ...'
+                sh "mvn compile"
+            }
+        }
+        stage('testing code') {
+            steps {
+                echo 'testing...'
+                sh "mvn test -DskipTests=true"
+            }
+        }
+        stage('trivy-scan') {
+            steps {
+                echo 'file-system scan...'
+                sh "trivy fs --output table -o fs.html ."
+            }
+       }
+      stage('sonar-analysis') {
+            steps {
+                echo 'sonarqube analysis...'
+                withSonarQubeEnv('sonarqube-server') {
+                sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=teslaapp -Dsonar.projectKey=teslaapp \
+                -Dsonar.java.binaries=target'''
+               }
+            }
+        }
+     /*   stage('quality-gates') {
+            steps {
+                echo 'carrying out quality-gates...'
+                timeout(4) {
+               waitForQualityGate abortPipeline: false, credentialsId: 'sonar-credd'
+                }
+            }
+        }
+    */    
+        stage('building and publish to nexus') {
+            steps {
+                echo 'Building and publishing to nexus...'
+                withMaven(globalMavenSettingsConfig: 'global-maven-settings', maven: 'maven3', traceability: false) { 
+                sh "mvn deploy -DskipTests=true"
+                }
+            }
+        }
+       stage('docker built & tag') {
+            steps {
+                script{
+                echo 'Building the docker image...'
+                withDockerRegistry(credentialsId: 'docker-cred') {
+                  sh "docker build -t zbantar/teslaapp:${params.DOCKER_TAG} ."
+                  }
+                }  
+            }
+        }
+        
+     /*   stage('trivy-docker image scan') {
+            steps {
+                echo 'scanning the docker image...'
+                sh "trivy image --format table -o dimage.html zbantar/teslaapp:${params.DOCKER_TAG}"
+            }
+        }
+    */
+        stage('docker push') {
+            steps {
+                script{
+                  echo 'pushing image to the registry'
+                   withDockerRegistry(credentialsId: 'docker-cred') {
+                  sh "docker push zbantar/teslaapp:${params.DOCKER_TAG}"
+                  
+                }
+            }
+        }
+    }   
+
+/*    post {
+    always {
+        echo 'Pipeline finished. Cleaning up...'
+        // Clean up temporary files
+        sh 'rm -rf /tmp/my-app-temp'
+    }
+    success {
+        echo 'Pipeline succeeded! Sending success notification...'
+        // Example: Send an email
+        // mail to: 'team@example.com', subject: 'Pipeline Success', body: 'The pipeline completed successfully.'
+        // Example: Send a Slack message
+        // slackSend channel: '#ci', message: 'SUCCESS: Pipeline finished for ${env.JOB_NAME} #${env.BUILD_NUMBER}. <${env.BUILD_URL}|Open>'
+    }
+    failure {
+        echo 'Pipeline failed. Sending failure notification...'
+        // Example: Send a Slack message
+        // slackSend channel: '#ci', color: 'danger', message: 'FAILURE: Pipeline failed for ${env.JOB_NAME} #${env.BUILD_NUMBER}. <${env.BUILD_URL}|Open>'
+    }
+    
+        }
+  */
+    }
+}
+  
+
+
